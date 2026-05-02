@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { DetectionInference, ArticleMetadata } from '../../module_bindings/types';
 
 type DomainLeaderboardProps = {
-  inferences: DetectionInference[];
-  articles: ArticleMetadata[];
+  inferences: readonly DetectionInference[];
+  articles: readonly ArticleMetadata[];
 };
 
 type DomainRow = {

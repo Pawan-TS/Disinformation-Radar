@@ -12,19 +12,31 @@ function getIdentityFromToml() {
     const tokenMatch = content.match(/spacetimedb_token\s*=\s*"([^"]+)"/);
     return tokenMatch ? tokenMatch[1] : null;
 }
+// Topics to rotate through — each run picks a different one for variety
+const QUERY_TOPICS = [
+    'politics', 'technology', 'climate change', 'economy', 'health',
+    'AI artificial intelligence', 'elections', 'war conflict', 'science',
+    'cryptocurrency', 'social media', 'cybersecurity', 'misinformation',
+    'energy', 'immigration', 'trade', 'pandemic', 'space exploration',
+];
 async function fetchArticles() {
     const apiKey = process.env.NEWS_API_AI_KEY;
     if (!apiKey || apiKey.startsWith('dummy-')) {
         console.log("Using mock articles due to missing real NEWS_API_AI_KEY");
+        const ts = Date.now();
         const mock = [];
         for (let i = 1; i <= 50; i++) {
-            mock.push({ url: `https://mock.example/article-${i}`, source: { uri: "mock.example" }, title: `Mock Article ${i}`, dateTimePub: new Date().toISOString() });
+            mock.push({ url: `https://mock.example/article-${ts}-${i}`, source: { uri: "mock.example" }, title: `Mock Article ${ts}-${i}`, dateTimePub: new Date().toISOString() });
         }
         return mock;
     }
-    console.log("Fetching from NewsAPI.org...");
+    // Pick a random topic and page so each run fetches different articles
+    const topic = QUERY_TOPICS[Math.floor(Math.random() * QUERY_TOPICS.length)];
+    const page = Math.floor(Math.random() * 3) + 1; // pages 1–3
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)}&pageSize=50&page=${page}&sortBy=publishedAt&apiKey=${apiKey}`;
+    console.log(`Fetching from NewsAPI.org — topic="${topic}", page=${page}...`);
     try {
-        const res = await fetch(`https://newsapi.org/v2/everything?q=news&pageSize=50&apiKey=${apiKey}`);
+        const res = await fetch(url);
         if (!res.ok)
             throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -38,9 +50,10 @@ async function fetchArticles() {
     }
     catch (e) {
         console.error("News API failed, falling back to mock", e);
+        const ts = Date.now();
         const mock = [];
         for (let i = 1; i <= 50; i++) {
-            mock.push({ url: `https://mock.example/article-${i}`, source: { uri: "mock.example" }, title: `Mock Article ${i}`, dateTimePub: new Date().toISOString() });
+            mock.push({ url: `https://mock.example/article-${ts}-${i}`, source: { uri: "mock.example" }, title: `Mock Article ${ts}-${i}`, dateTimePub: new Date().toISOString() });
         }
         return mock;
     }

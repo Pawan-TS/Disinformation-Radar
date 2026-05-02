@@ -3,7 +3,7 @@ import { DetectionInference } from '../../module_bindings/types';
 import { useMemo } from 'react';
 
 type ConfidenceDistributionProps = {
-  inferences: DetectionInference[];
+  inferences: readonly DetectionInference[];
 };
 
 export function ConfidenceDistribution({ inferences }: ConfidenceDistributionProps) {

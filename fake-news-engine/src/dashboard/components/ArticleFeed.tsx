@@ -6,7 +6,7 @@ type FeedFilter = 'All' | 'Fake' | 'Real' | 'Unverified' | 'Pending';
 type SortMode = 'newest' | 'highConf' | 'lowConf';
 
 type ArticleFeedProps = {
-  inferences: DetectionInference[];
+  inferences: readonly DetectionInference[];
   metaMap: Map<string, ArticleMetadata>;
   onOverride: (articleId: bigint) => void;
 };

@@ -3,24 +3,41 @@ import { DetectionInference, ArticleMetadata } from '../../module_bindings/types
 import { useMemo } from 'react';
 
 type IngestionTimelineProps = {
-  inferences: DetectionInference[];
-  articles: ArticleMetadata[];
+  inferences: readonly DetectionInference[];
+  articles: readonly ArticleMetadata[];
 };
 
 /**
  * Safely convert a SpacetimeDB timestamp to a JS Date.
- * Timestamps may be: bigint (microseconds), number, { seconds, nanoseconds }, or Date.
+ * Timestamps may be: bigint (microseconds), number (seconds/millis/micros),
+ * { seconds, nanoseconds }, { microsSinceEpoch }, or
+ * { __timestamp_micros_since_unix_epoch__ }.
  */
 function toDate(ts: any): Date | null {
   try {
     if (ts instanceof Date) return ts;
-    if (typeof ts === 'bigint') return new Date(Number(ts / 1000n));
-    if (typeof ts === 'number') return new Date(ts);
+
+    if (typeof ts === 'bigint') {
+      // SpacetimeDB often uses microseconds for timestamp transport values.
+      return new Date(Number(ts / 1000n));
+    }
+
+    if (typeof ts === 'number') {
+      // Heuristic by magnitude: seconds (<1e11), milliseconds (<1e14), otherwise microseconds.
+      if (ts < 1e11) return new Date(ts * 1000);
+      if (ts < 1e14) return new Date(ts);
+      return new Date(ts / 1000);
+    }
+
     if (ts && typeof ts === 'object') {
       // SpacetimeDB Timestamp { seconds: bigint, nanoseconds: number }
       if ('seconds' in ts) return new Date(Number(ts.seconds) * 1000);
       if ('microsSinceEpoch' in ts) return new Date(Number(ts.microsSinceEpoch) / 1000);
+      if ('__timestamp_micros_since_unix_epoch__' in ts) {
+        return new Date(Number(ts.__timestamp_micros_since_unix_epoch__) / 1000);
+      }
     }
+
     return null;
   } catch {
     return null;
@@ -65,16 +82,17 @@ export function IngestionTimeline({ inferences, articles }: IngestionTimelinePro
       .map(([key, val]) => {
         const d = new Date(key);
         return {
-          time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          // Include date in the key to avoid collisions across day boundaries.
+          time: d.toLocaleString([], {
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
           ...val
         };
       });
   }, [inferences, articles]);
-
-  // Debug: log input lengths and a short preview of the computed buckets.
-  // Remove these logs after debugging.
-  // eslint-disable-next-line no-console
-  console.debug('IngestionTimeline', { inferencesLength: inferences.length, articlesLength: articles.length, preview: data.slice(0, 8) });
 
   if (data.length === 0) {
     return (

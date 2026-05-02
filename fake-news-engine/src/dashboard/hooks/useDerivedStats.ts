@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { DetectionInference, ArticleMetadata } from '../../module_bindings/types';
 
 export function useDerivedStats(
-  inferences: DetectionInference[],
-  articles: ArticleMetadata[]
+  inferences: readonly DetectionInference[],
+  articles: readonly ArticleMetadata[]
 ) {
   return useMemo(() => {
     const processed  = inferences.filter(r => r.isProcessed);

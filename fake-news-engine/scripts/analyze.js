@@ -32,10 +32,10 @@ function isRateLimitError(err) {
     return status === 429 || message.includes('rate limit') || message.includes('too many requests');
 }
 function normalizeClassification(value) {
-    if (value === 'Safe' || value === 'Suspicious' || value === 'Fake') {
+    if (value === 'Real' || value === 'Unverified' || value === 'Fake') {
         return value;
     }
-    return 'Suspicious';
+    return 'Unverified';
 }
 function normalizeConfidence(value) {
     if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -88,7 +88,7 @@ async function analyzeBatch(articles) {
         messages: [
             {
                 role: "system",
-                content: "You are a factual accuracy analyzer. Return ONLY valid JSON array. For each input item, return an object with fields: articleId (string), classification (exactly 'Safe', 'Suspicious', or 'Fake'), confidence (number from 0 to 1). Do not include markdown or extra text."
+                content: "You are a factual accuracy analyzer. Return ONLY valid JSON array. For each input item, return an object with fields: articleId (string), classification (exactly 'Real', 'Unverified', or 'Fake'), confidence (number from 0 to 1). Do not include markdown or extra text."
             },
             {
                 role: "user",
@@ -115,7 +115,7 @@ async function analyzeBatch(articles) {
         const key = article.articleId.toString();
         return (resultMap.get(key) || {
             articleId: article.articleId,
-            classification: 'Suspicious',
+            classification: 'Unverified',
             confidence: 0.5,
         });
     });

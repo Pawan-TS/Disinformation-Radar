@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArticleMetadata, DetectionInference } from '../../module_bindings/types';
 import { reducers } from '../../module_bindings';
+import { useReducer } from 'spacetimedb/react';
 
 type OverridePanelProps = {
   articleId: bigint;
@@ -11,6 +12,7 @@ type OverridePanelProps = {
 };
 
 export function OverridePanel({ articleId, meta, inference, onClose, onSuccess }: OverridePanelProps) {
+  const overrideClassification = useReducer(reducers.overrideClassification);
   const [classification, setClassification] = useState<string>(inference?.classification ?? 'Unverified');
   const [rationale, setRationale] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,7 @@ export function OverridePanel({ articleId, meta, inference, onClose, onSuccess }
     setError(null);
 
     try {
-      reducers.overrideClassification.call(articleId, classification, rationale);
+      await overrideClassification({ articleId, classification, rationale });
       onSuccess();
     } catch (e: any) {
       setError(e?.message ?? 'Override failed. Please try again.');
